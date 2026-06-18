@@ -92,7 +92,7 @@ const styles = `
 
 const CASES = [
   {id:"JVM-2024-0091",client:"R. Hargrove Estate",type:"Probate",atty:"T. Johnson",status:"review",updated:"Jun 11"},
-  {id:"JVM-2024-0087",client:"Landsberg Const. v. Price",type:"Civil Litigation",atty:"M. Vorhees",status:"active",updated:"Jun 12"},
+  {id:"JVM-2024-0087",client:`Landsberg Const. v. Price`,type:"Civil Litigation",atty:"M. Vorhees",status:"active",updated:"Jun 12"},
   {id:"JVM-2024-0083",client:"Chen Divorce Proceedings",type:"Family Law",atty:"A. Marticci",status:"active",updated:"Jun 12"},
   {id:"JVM-2024-0079",client:"City of Joplin Zoning",type:"Municipal",atty:"T. Johnson",status:"urgent",updated:"Jun 13"},
   {id:"JVM-2024-0071",client:"Webb Personal Injury",type:"PI / Tort",atty:"M. Vorhees",status:"active",updated:"Jun 10"},

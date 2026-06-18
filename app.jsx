@@ -1,13 +1,9 @@
 const { useState, useRef, useEffect } = React;
 
-const NAVY = "#0E1C36";
-const GOLD = "#B8963E";
-const PARCH = "#F5F0E8";
-const WHITE = "#FFFFFF";
-const MUTED = "#6B7280";
-
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+  body { font-family: 'Inter', sans-serif; background: #F5F0E8; color: #1A1A2E; margin: 0; }
+  * { box-sizing: border-box; }
   .sidebar { position:fixed; top:0; left:0; bottom:0; width:220px; background:#0E1C36; display:flex; flex-direction:column; z-index:100; }
   .logo-area { padding:24px 18px; border-bottom:1px solid #1E3A5F; }
   .firm-name { font-family:'Playfair Display',serif; font-size:13px; color:#D4AF6A; line-height:1.4; }
@@ -17,7 +13,6 @@ const styles = `
   .nav-item { display:flex; align-items:center; gap:10px; padding:9px 18px; font-size:12.5px; color:#A0B4CC; cursor:pointer; border-left:3px solid transparent; }
   .nav-item:hover { background:#1E3A5F; color:#fff; }
   .nav-active { background:#162848; color:#D4AF6A; border-left-color:#B8963E; }
-  .main { margin-left:220px; min-height:100vh; }
   .topbar { background:#fff; border-bottom:1px solid #EAE3D2; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
   .page-title { font-family:'Playfair Display',serif; font-size:20px; color:#0E1C36; }
   .content { padding:22px 24px; }
@@ -31,7 +26,7 @@ const styles = `
   .stat-d { font-size:11px; margin-top:6px; }
   .up { color:#2D6A4F; } .dn { color:#7F1D1D; }
   .card { background:#fff; border:1px solid #EAE3D2; border-radius:6px; padding:18px; margin-bottom:18px; }
-  .card-title { font-family:'Playfair Display',serif; font-size:15px; color:#0E1C36; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #EAE3D2; display:flex; justify-content:space-between; align-items:center; }
+  .card-title { font-family:'Playfair Display',serif; font-size:15px; color:#0E1C36; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #EAE3D2; display:flex; justify-content:space-between; }
   .btn { display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:5px; font-size:12px; font-weight:500; cursor:pointer; border:none; font-family:'Inter',sans-serif; }
   .btn-navy { background:#0E1C36; color:#fff; }
   .btn-gold { background:#B8963E; color:#fff; }
@@ -78,16 +73,8 @@ const styles = `
   .ai-input::placeholder { color:#3D5070; }
   .ai-input:focus { border-color:#B8963E; }
   .ai-send { background:#B8963E; border:none; border-radius:6px; width:34px; height:34px; cursor:pointer; color:#0E1C36; font-size:15px; display:flex; align-items:center; justify-content:center; }
-  .typing { display:flex; gap:3px; align-items:center; padding:4px 0; }
-  .typing span { width:5px; height:5px; border-radius:50%; background:#B8963E; opacity:.6; animation:bounce 1.2s infinite; }
-  .typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
-  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
   .doc-opt { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#F5F0E8; border-radius:5px; cursor:pointer; border:1px solid transparent; margin-bottom:8px; font-size:12.5px; }
   .doc-opt:hover { border-color:#B8963E; background:#FFFBF3; }
-  .doc-opt-sel { border-color:#B8963E; background:#FFFBF3; }
-  .shimmer { background:linear-gradient(90deg,#EAE3D2 25%,#F5F0E8 50%,#EAE3D2 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:4px; height:14px; }
-  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  input,select { font-family:'Inter',sans-serif; }
   .tag { display:inline-block; padding:2px 7px; background:#F5F0E8; border:1px solid #EAE3D2; border-radius:99px; font-size:10px; color:#6B7280; }
   .sidebar-footer { margin-top:auto; padding:14px 18px; border-top:1px solid #1E3A5F; }
   .avatar { width:30px; height:30px; border-radius:50%; background:#1E3A5F; display:flex; align-items:center; justify-content:center; font-size:11px; color:#D4AF6A; font-weight:600; }
@@ -118,25 +105,39 @@ const ACTIVITY = [
   {icon:"✅",text:"Invoice #4482 sent to Midwest Farms LLC — $3,200 billed",time:"Yesterday"},
 ];
 
-const AI_INIT = [{role:"ai",text:"Good morning. I'm JVM Counsel AI — here to help manage caseload, draft documents, and surface deadlines for Johnson, Vorhees & Marticci. What do you need?",time:"9:01 AM"}];
+const AI_INIT = [{role:"ai",text:"Good morning. I'm JVM Counsel AI — here to help manage caseload, draft documents, and surface deadlines for Johnson, Vorhees & Marticci. What do you need?",time:"now"}];
 
 function getReply(input) {
   const l = input.toLowerCase();
-  if(l.includes("draft")||l.includes("letter")||l.includes("motion")) return "I can draft that. Which case is this for? Once confirmed I'll prepare a first draft following Missouri court standards and flag Jasper County requirements.";
-  if(l.includes("deadline")||l.includes("due")||l.includes("upcoming")) return "Most urgent: City of Joplin Zoning response brief — due June 17, 4 days out. T. Johnson assigned. Should I prepare a deadline summary email for the team?";
-  if(l.includes("intake")||l.includes("new client")) return "To run a new intake I need: full client name, matter type, opposing party, and referring attorney. I'll run a conflict check across all 94 active and archived matters automatically.";
-  if(l.includes("conflict")) return "Running conflict check across JVM's full matter database... Cross-referencing client names, opposing parties, related entities, and disclosed interests.";
-  if(l.includes("invoice")||l.includes("billing")) return "I can generate a billing summary from logged time entries. Which matter and date range should I pull? I'll format it per your standard retainer agreement terms.";
+  if(l.includes("draft")||l.includes("letter")||l.includes("motion")) return "I can draft that. Which case is this for? Once confirmed I'll prepare a first draft following Missouri court standards.";
+  if(l.includes("deadline")||l.includes("due")||l.includes("upcoming")) return "Most urgent: City of Joplin Zoning response brief — due June 17, 4 days out. T. Johnson assigned. Should I prepare an outline?";
+  if(l.includes("intake")||l.includes("new client")) return "To run a new intake I need: full client name, matter type, opposing party, and referring attorney. I'll run a conflict check.";
+  if(l.includes("conflict")) return "Running conflict check across JVM's full matter database... No conflicts found.";
+  if(l.includes("invoice")||l.includes("billing")) return "I can generate a billing summary from logged time entries. Which matter and date range?";
   return "I can help with case research, document drafts, deadline tracking, client intake, conflict checks, and billing summaries. What would you like to tackle first?";
 }
 
 const now = () => new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
 
 function Dashboard({setView}) {
+  const stats = [
+    ["94","Active Matters","▲ 6 this month",true],
+    ["17","Upcoming Deadlines","▲ 3 this week",false],
+    ["$128K","Unbilled Time","▼ $14K from last mo.",true],
+    ["4.8","Client Sat. Score","↑ Strong","false"]
+  ];
+  const actions = [
+    ["📋","New Intake","intake"],
+    ["⚖️","Active Matters","cases"],
+    ["📝","Draft Document","docs"],
+    ["🔍","Conflict Check","ai"],
+    ["💰","Generate Invoice","billing"],
+    ["📅","View Deadlines","deadlines"]
+  ];
   return (
     <div>
       <div className="grid4">
-        {[["94","Active Matters","▲ 6 this month",true],["17","Upcoming Deadlines","▲ 3 this week",false],["$128K","Unbilled Time","▼ $14K from last mo.",true],["4.8","Client Sat. Score","▲ 0.2 pts",true]].map(([n,l,d,up],i)=>(
+        {stats.map(([n,l,d,up],i)=>(
           <div key={i} className="stat">
             <div className="stat-n">{n}</div>
             <div className="stat-l">{l}</div>
@@ -147,7 +148,7 @@ function Dashboard({setView}) {
       <div className="card">
         <div className="card-title">Quick Actions</div>
         <div className="grid4">
-          {[["📋","New Intake","intake"],["⚖️","Active Matters","cases"],["📝","Draft Document","docs"],["🔍","Conflict Check","ai"],["💰","Generate Invoice","billing"],["📅","View Deadlines","deadlines"],["📊","Reports","reports"],["🤖","Ask JVM AI","ai"]].map(([icon,label,v],i)=>(
+          {actions.map(([icon,label,v],i)=>(
             <div key={i} className="qa" onClick={()=>setView(v)}>
               <div className="qa-icon">{icon}</div>
               <div className="qa-lbl">{label}</div>
@@ -161,7 +162,7 @@ function Dashboard({setView}) {
           {DEADLINES.slice(0,4).map((d,i)=>(
             <div key={i} className="dl-item">
               <div className="dl-date"><div className="dl-mo">{d.month}</div><div className="dl-day">{d.day}</div></div>
-              <div><div style={{fontSize:"12.5px",fontWeight:500,color:"#0E1C36"}}>{d.case}</div><div style={{fontSize:"11px",color:"#6B7280"}}>{d.type}</div><div style={{fontSize:"10px",color:"#B8963E",marginTop:"2px"}}>{d.atty}</div></div>
+              <div><div style={{fontSize:"12.5px",fontWeight:500,color:"#0E1C36"}}>{d.case}</div><div style={{fontSize:"11px",color:"#6B7280"}}>{d.type}</div><div style={{fontSize:"10px",color:"#5A6E8A"}}>{d.atty}</div></div>
             </div>
           ))}
         </div>
@@ -185,7 +186,7 @@ function Cases() {
   return (
     <div className="card">
       <div className="card-title">Active Matters <button className="btn btn-gold">+ New Matter</button></div>
-      <input placeholder="Search client, type, attorney…" value={search} onChange={e=>setSearch(e.target.value)} style={{padding:"8px 12px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"13px",width:"280px",marginBottom:"14px",outline:"none"}} />
+      <input placeholder="Search client, type, attorney…" value={search} onChange={e=>setSearch(e.target.value)} style={{padding:"8px 12px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"12.5px",width:"100%",marginBottom:"12px"}}/>
       <table>
         <thead><tr><th>Matter ID</th><th>Client</th><th>Type</th><th>Attorney</th><th>Status</th><th>Updated</th></tr></thead>
         <tbody>
@@ -217,6 +218,7 @@ function AIAssistant() {
     setMsgs(m=>[...m,u]); setInput(""); setTyping(true);
     setTimeout(()=>{setTyping(false);setMsgs(m=>[...m,{role:"ai",text:getReply(u.text),time:now()}]);},1400+Math.random()*600);
   };
+  const prompts = ["Draft a demand letter for Webb Personal Injury","What deadlines are coming up this week?","Run a conflict check for new client Martinez","Generate a billing summary for June","Research case law on tort liability"];
   return (
     <div className="grid2">
       <div className="ai-panel">
@@ -228,19 +230,19 @@ function AIAssistant() {
               <div className="msg-time">{m.time}</div>
             </div>
           ))}
-          {typing&&<div className="msg msg-ai"><div className="bubble-ai"><div className="typing"><span/><span/><span/></div></div></div>}
+          {typing&&<div className="msg msg-ai"><div className="bubble-ai"><div style={{display:"flex",gap:"3px"}}><span style={{width:"5px",height:"5px",borderRadius:"50%",background:"#B8963E"}}></span><span style={{width:"5px",height:"5px",borderRadius:"50%",background:"#B8963E"}}></span><span style={{width:"5px",height:"5px",borderRadius:"50%",background:"#B8963E"}}></span></div></div></div>}
           <div ref={endRef}/>
         </div>
         <div className="ai-input-row">
-          <input className="ai-input" placeholder="Ask about deadlines, draft a motion, conflict check…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} />
+          <input className="ai-input" placeholder="Ask about deadlines, draft a motion, conflict check…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/>
           <button className="ai-send" onClick={send}>➤</button>
         </div>
       </div>
       <div>
         <div className="card">
           <div className="card-title">Try These Prompts</div>
-          {["Draft a demand letter for Webb Personal Injury","What deadlines are coming up this week?","Run a conflict check for new client Martinez","Generate a billing summary for June","Research Missouri statute of limitations"].map((p,i)=>(
-            <div key={i} className="doc-opt" onClick={()=>setInput(p)}><span style={{color:"#B8963E"}}>→</span>{p}</div>
+          {prompts.map((p,i)=>(
+            <div key={i} className="doc-opt" onClick={()=>setInput(p)}><span style={{color:"#B8963E"}}>→</span> {p}</div>
           ))}
         </div>
       </div>
@@ -255,8 +257,8 @@ function Deadlines() {
       {DEADLINES.map((d,i)=>(
         <div key={i} className="dl-item">
           <div className="dl-date"><div className="dl-mo">{d.month}</div><div className="dl-day">{d.day}</div></div>
-          <div style={{flex:1}}><div style={{fontSize:"12.5px",fontWeight:500,color:"#0E1C36"}}>{d.case}</div><div style={{fontSize:"11px",color:"#6B7280"}}>{d.type}</div><div style={{fontSize:"10px",color:"#B8963E",marginTop:"2px"}}>{d.atty}</div></div>
-          <div style={{display:"flex",gap:"6px"}}><button className="btn btn-ghost" style={{fontSize:"11px",padding:"4px 10px"}}>Remind</button><button className="btn btn-navy" style={{fontSize:"11px",padding:"4px 10px"}}>Prepare</button></div>
+          <div style={{flex:1}}><div style={{fontSize:"12.5px",fontWeight:500,color:"#0E1C36"}}>{d.case}</div><div style={{fontSize:"11px",color:"#6B7280"}}>{d.type}</div><div style={{fontSize:"10px",color:"#5A6E8A"}}>{d.atty}</div></div>
+          <div style={{display:"flex",gap:"6px"}}><button className="btn btn-ghost" style={{fontSize:"11px",padding:"4px 10px"}}>Remind</button><button className="btn btn-navy" style={{fontSize:"11px",padding:"4px 10px"}}>Done</button></div>
         </div>
       ))}
     </div>
@@ -264,10 +266,12 @@ function Deadlines() {
 }
 
 function Billing() {
+  const billingStats = [["$43,200","Billed — June","#1A6B3C"],["$128,400","Outstanding","#92400E"],["$6,800","Overdue 90+ Days","#7F1D1D"]];
+  const billingRows = [["Webb Personal Injury","M. Vorhees","12.5","$285","$3,562","review"],["Chen Divorce","A. Marticci","8.0","$250","$2,000","active"],["Joplin Zoning","T. Johnson","6.5","$310","$2,015","active"]];
   return (
     <div>
       <div className="grid3">
-        {[["$43,200","Billed — June","#1A6B3C"],["$128,400","Outstanding","#92400E"],["$6,800","Overdue 90+ Days","#7F1D1D"]].map(([n,l,c],i)=>(
+        {billingStats.map(([n,l,c],i)=>(
           <div key={i} className="stat"><div className="stat-n" style={{color:c,fontSize:"26px"}}>{n}</div><div className="stat-l">{l}</div></div>
         ))}
       </div>
@@ -276,7 +280,7 @@ function Billing() {
         <table>
           <thead><tr><th>Matter</th><th>Attorney</th><th>Hours</th><th>Rate</th><th>Amount</th><th>Status</th></tr></thead>
           <tbody>
-            {[["Webb Personal Injury","M. Vorhees","12.5","$285","$3,562","review"],["Chen Divorce","A. Marticci","8.0","$250","$2,000","active"],["Joplin Zoning","T. Johnson","6.5","$310","$2,015","review"],["Landsberg v. Price","M. Vorhees","21.0","$285","$5,985","review"],["Hargrove Estate","T. Johnson","9.0","$310","$2,790","urgent"]].map((r,i)=>(
+            {billingRows.map((r,i)=>(
               <tr key={i}><td>{r[0]}</td><td style={{color:"#B8963E"}}>{r[1]}</td><td>{r[2]}</td><td>{r[3]}</td><td style={{fontWeight:600}}>{r[4]}</td><td><span className={`pill pill-${r[5]}`}>{r[5].charAt(0).toUpperCase()+r[5].slice(1)}</span></td></tr>
             ))}
           </tbody>
@@ -286,63 +290,13 @@ function Billing() {
   );
 }
 
-function Intake() {
-  const [step,setStep] = useState(1);
-  const [conflict,setConflict] = useState(null);
-  return (
-    <div className="grid2">
-      <div className="card">
-        <div className="card-title">New Client Intake</div>
-        <div style={{display:"flex",gap:"6px",marginBottom:"18px"}}>
-          {["Client Info","Matter Details","Conflict Check","Assignment"].map((s,i)=>(
-            <div key={i} onClick={()=>setStep(i+1)} style={{flex:1,textAlign:"center",padding:"6px 4px",borderRadius:"4px",background:step===i+1?"#0E1C36":"#F5F0E8",color:step===i+1?"#D4AF6A":"#6B7280",fontSize:"10px",fontWeight:step===i+1?600:400,cursor:"pointer"}}>{s}</div>
-          ))}
-        </div>
-        {step===1&&<div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-          {["Full Legal Name","Phone Number","Email Address","Mailing Address"].map((l,i)=>(
-            <div key={i}><label style={{fontSize:"11px",color:"#6B7280",display:"block",marginBottom:"3px"}}>{l}</label><input style={{width:"100%",padding:"8px 10px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"12.5px",outline:"none"}} /></div>
-          ))}
-          <button className="btn btn-navy" onClick={()=>setStep(2)}>Next → Matter Details</button>
-        </div>}
-        {step===2&&<div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-          {[["Matter Type",["Civil Litigation","Family Law","Probate","Criminal","Real Estate","Contract"]],["Opposing Party"],["Brief Description"]].map(([l,opts],i)=>(
-            <div key={i}><label style={{fontSize:"11px",color:"#6B7280",display:"block",marginBottom:"3px"}}>{l}</label>
-            {opts?<select style={{width:"100%",padding:"8px 10px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"12.5px",outline:"none",background:"#fff"}}><option>Select…</option>{opts.map(o=><option key={o}>{o}</option>)}</select>:<input style={{width:"100%",padding:"8px 10px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"12.5px",outline:"none"}} />}
-            </div>
-          ))}
-          <div style={{display:"flex",gap:"8px"}}><button className="btn btn-ghost" onClick={()=>setStep(1)}>← Back</button><button className="btn btn-navy" style={{flex:1}} onClick={()=>{setStep(3);setTimeout(()=>setConflict("clear"),1800);}}>Run Conflict Check →</button></div>
-        </div>}
-        {step===3&&<div style={{textAlign:"center",padding:"28px 0"}}>
-          {!conflict?<><div style={{fontSize:"28px",marginBottom:"10px"}}>🔍</div><div style={{fontSize:"14px",fontWeight:600,color:"#0E1C36",marginBottom:"6px"}}>Running Conflict Check</div><div style={{fontSize:"12px",color:"#6B7280",marginBottom:"18px"}}>Searching 94 active + 412 archived matters…</div><div className="shimmer" style={{width:"80%",margin:"0 auto 8px"}}/><div className="shimmer" style={{width:"60%",margin:"0 auto"}}/></>
-          :<><div style={{fontSize:"36px",marginBottom:"10px"}}>✅</div><div style={{fontSize:"14px",fontWeight:600,color:"#1A6B3C",marginBottom:"6px"}}>No Conflicts Found</div><div style={{fontSize:"12px",color:"#6B7280",marginBottom:"18px"}}>Client and opposing party have no prior JVM matters.</div><button className="btn btn-navy" onClick={()=>setStep(4)}>Assign Attorney →</button></>}
-        </div>}
-        {step===4&&<div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-          <div style={{padding:"12px",background:"#D1FAE5",borderRadius:"6px",fontSize:"12.5px",color:"#1A6B3C",marginBottom:"6px"}}>✅ Conflict check passed. Ready to assign and open matter.</div>
-          {[["Assigned Attorney",["T. Johnson","M. Vorhees","A. Marticci"]],["Retainer Amount"]].map(([l,opts],i)=>(
-            <div key={i}><label style={{fontSize:"11px",color:"#6B7280",display:"block",marginBottom:"3px"}}>{l}</label>
-            {opts?<select style={{width:"100%",padding:"8px 10px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"12.5px",outline:"none",background:"#fff"}}>{opts.map(o=><option key={o}>{o}</option>)}</select>:<input style={{width:"100%",padding:"8px 10px",border:"1px solid #EAE3D2",borderRadius:"5px",fontSize:"12.5px",outline:"none"}} />}
-            </div>
-          ))}
-          <button className="btn btn-gold" style={{justifyContent:"center"}}>Open Matter & Send Retainer Agreement</button>
-        </div>}
-      </div>
-      <div className="card">
-        <div className="card-title">AI Intake Notes</div>
-        {[["Missouri SOL","Civil: 5yr · PI: 5yr · Contract: 5yr · Property: 10yr"],["Conflict Check","Runs against all clients, opposing parties & related entities"],["Retainer Policy","Min. $1,500 for new civil matters · Probate: flat-fee applies"],["Referral Protocol","Document referral source for bar compliance & marketing"]].map(([t,b],i)=>(
-          <div key={i} style={{padding:"10px 0",borderBottom:i<3?"1px solid #EAE3D2":"none"}}><div style={{fontSize:"12px",fontWeight:600,color:"#0E1C36"}}>{t}</div><div style={{fontSize:"11.5px",color:"#6B7280",marginTop:"2px"}}>{b}</div></div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const NAV = [
   {section:"Overview",items:[{id:"dashboard",icon:"📊",label:"Dashboard"},{id:"ai",icon:"🤖",label:"JVM Counsel AI"}]},
-  {section:"Case Management",items:[{id:"cases",icon:"⚖️",label:"Active Matters"},{id:"deadlines",icon:"📅",label:"Deadlines"},{id:"intake",icon:"👤",label:"New Intake"}]},
-  {section:"Tools",items:[{id:"billing",icon:"💰",label:"Billing"},{id:"reports",icon:"📈",label:"Reports"}]},
+  {section:"Case Management",items:[{id:"cases",icon:"⚖️",label:"Active Matters"},{id:"deadlines",icon:"📅",label:"Deadlines"}]},
+  {section:"Tools",items:[{id:"billing",icon:"💰",label:"Billing"}]},
 ];
 
-const TITLES = {dashboard:"Dashboard",ai:"JVM Counsel AI",cases:"Active Matters",deadlines:"Upcoming Deadlines",intake:"New Client Intake",billing:"Billing",reports:"Reports"};
+const TITLES = {dashboard:"Dashboard",ai:"JVM Counsel AI",cases:"Active Matters",deadlines:"Upcoming Deadlines",billing:"Billing"};
 
 function App() {
   const [view,setView] = useState("dashboard");
@@ -383,8 +337,6 @@ function App() {
             {view==="ai"&&<AIAssistant/>}
             {view==="deadlines"&&<Deadlines/>}
             {view==="billing"&&<Billing/>}
-            {view==="intake"&&<Intake/>}
-            {view==="reports"&&<div className="card" style={{textAlign:"center",padding:"60px 0"}}><div style={{fontSize:"32px",marginBottom:"12px"}}>📈</div><div style={{fontSize:"14px",fontWeight:600,color:"#0E1C36",marginBottom:"6px"}}>Analytics Coming Soon</div><div style={{fontSize:"12px",color:"#6B7280"}}>Matter volume, billing trends & client satisfaction reports.</div></div>}
           </div>
         </main>
       </div>
